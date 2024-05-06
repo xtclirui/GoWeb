@@ -52,12 +52,15 @@ func (c *Context) String(status int, format string, values ...interface{}) {
 	c.Writer.Write([]byte(fmt.Sprintf(format, values...)))
 }
 
+// 空接口可以接受任意类型的参数
+// interface{}能接收map[string]interface{}类型
 func (c *Context) JSON(status int, obj interface{}) {
 	c.SetHeader("Content-Type", "application/json")
 	c.Status(status)
 	// 作用是创建一个 JSON 编码器，用于将数据编码为 JSON 格式并写入指定的 http.ResponseWriter
 	encoder := json.NewEncoder(c.Writer)
 	// 调用 Encode() 方法后，编码器会将数据对象 obj 转换为 JSON 字符串，并将其写入到编码器指向的 io.Writer 接口对象中。
+	// obj 是map类型
 	if err := encoder.Encode(obj); err != nil {
 		http.Error(c.Writer, err.Error(), 500)
 	}
