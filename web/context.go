@@ -6,6 +6,8 @@ import (
 	"net/http"
 )
 
+type H map[string]interface{}
+
 type Context struct {
 	Writer     http.ResponseWriter
 	Req        *http.Request
@@ -24,7 +26,13 @@ func newContext(w http.ResponseWriter, req *http.Request) *Context {
 }
 
 func (c *Context) PostForm(kye string) string {
+	// FormValue 方法可以用于获取 HTTP 请求的表单参数值
 	return c.Req.FormValue(kye)
+}
+
+func (c *Context) Query(kye string) string {
+	// 获取请求 URL 中名为 key 的查询参数的值
+	return c.Req.URL.Query().Get(kye)
 }
 
 func (c *Context) Status(status int) {
@@ -33,9 +41,11 @@ func (c *Context) Status(status int) {
 }
 
 func (c *Context) SetHeader(key string, value string) {
+	// 设置http头信息
 	c.Writer.Header().Set(key, value)
 }
 
+// 提供了快速构造String/Data/JSON/HTML响应的方法。
 func (c *Context) String(code int, format string, values ...interface{}) {
 	c.SetHeader("Content-Type", "text/plain")
 	c.Status(code)
