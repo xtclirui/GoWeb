@@ -2,7 +2,6 @@ package web
 
 import (
 	"log"
-	"net/http"
 )
 
 type router struct {
@@ -18,11 +17,12 @@ func (r *router) addRouter(method string, url string, handler HandlerFunc) {
 	key := method + "-" + url
 	r.handlers[key] = handler
 }
+
 func (r *router) handle(c *Context) {
 	key := c.Method + "-" + c.Path
 	if handler, ok := r.handlers[key]; ok {
 		handler(c)
 	} else {
-		c.String(http.StatusNoContent, "404 NOT FOUND: %s\n", c.Path)
+		c.String(404, "404 NOT FOUND: %s\n", c.Path)
 	}
 }

@@ -46,28 +46,30 @@ func (c *Context) SetHeader(key string, value string) {
 }
 
 // 提供了快速构造String/Data/JSON/HTML响应的方法。
-func (c *Context) String(code int, format string, values ...interface{}) {
+func (c *Context) String(status int, format string, values ...interface{}) {
 	c.SetHeader("Content-Type", "text/plain")
-	c.Status(code)
+	c.Status(status)
 	c.Writer.Write([]byte(fmt.Sprintf(format, values...)))
 }
 
-func (c *Context) JSON(code int, obj interface{}) {
+func (c *Context) JSON(status int, obj interface{}) {
 	c.SetHeader("Content-Type", "application/json")
-	c.Status(code)
+	c.Status(status)
+	// 作用是创建一个 JSON 编码器，用于将数据编码为 JSON 格式并写入指定的 http.ResponseWriter
 	encoder := json.NewEncoder(c.Writer)
+	// 调用 Encode() 方法后，编码器会将数据对象 obj 转换为 JSON 字符串，并将其写入到编码器指向的 io.Writer 接口对象中。
 	if err := encoder.Encode(obj); err != nil {
 		http.Error(c.Writer, err.Error(), 500)
 	}
 }
 
-func (c *Context) Data(code int, data []byte) {
-	c.Status(code)
+func (c *Context) Data(status int, data []byte) {
+	c.Status(status)
 	c.Writer.Write(data)
 }
 
-func (c *Context) HTML(code int, html string) {
+func (c *Context) HTML(status int, html string) {
 	c.SetHeader("Content-Type", "text/html")
-	c.Status(code)
+	c.Status(status)
 	c.Writer.Write([]byte(html))
 }

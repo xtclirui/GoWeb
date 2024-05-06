@@ -8,7 +8,7 @@ import (
 func main() {
 	r := web.New()
 	r.GET("/", func(c *web.Context) {
-		c.HTML(http.StatusOK, "<h1>Hello Gee</h1>")
+		c.HTML(http.StatusOK, "<h1>Hello Web</h1>")
 	})
 	r.GET("/hello", func(c *web.Context) {
 		// expect /hello?name=geektutu
