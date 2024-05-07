@@ -53,8 +53,8 @@ func (c *Context) String(status int, format string, values ...interface{}) {
 	c.Writer.Write([]byte(fmt.Sprintf(format, values...)))
 }
 
-// 空接口可以接受任意类型的参数
-// interface{}能接收map[string]interface{}类型
+// 空接口可以接受任意类型的参数  interface{}能接收map[string]interface{}类型
+
 func (c *Context) JSON(status int, obj interface{}) {
 	c.SetHeader("Content-Type", "application/json")
 	c.Status(status)

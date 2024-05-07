@@ -25,5 +25,5 @@ func main() {
 		c.JSON(http.StatusOK, web.H{"filepath": c.Param("filepath")})
 	})
 
-	w.Run(":9999")
+	_ = w.Run(":9999")
 }

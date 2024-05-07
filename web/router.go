@@ -4,13 +4,18 @@ import (
 	"strings"
 )
 
+// 注册了四个路由：
+// "/"
+// "/hello"
+// "/hello/:name"
+// "/assets/*filepath"
 type router struct {
 	handlers map[string]HandlerFunc
 	roots    map[string]*node // GET POST 等method分开存放在不同的树
 }
 
-func parsePattern(pattern string) []string {
-	vs := strings.Split(pattern, "/")
+func parseUrl(url string) []string {
+	vs := strings.Split(url, "/")
 	parts := make([]string, 0)
 	for _, item := range vs {
 		if item != "" {
@@ -28,7 +33,7 @@ func newRouter() *router {
 }
 
 func (r *router) addRouter(method string, url string, handler HandlerFunc) {
-	parts := parsePattern(url)
+	parts := parseUrl(url)
 
 	key := method + "-" + url
 	_, ok := r.roots[method]
@@ -41,8 +46,13 @@ func (r *router) addRouter(method string, url string, handler HandlerFunc) {
 	r.handlers[key] = handler
 }
 
-func (r *router) getRoute(method string, path string) (*node, map[string]string) {
-	searchParts := parsePattern(path)
+func (r *router) getRoute(method string, url string) (*node, map[string]string) {
+	searchParts := parseUrl(url)
+	// params存放的是注册路由时，含有模糊匹配时，匹配的对应关系
+	// "/p/:lang/doc" "/p/go/doc"
+	// key : "lang", value : "go"
+	// "/static/*filepath" "/static/js/jQuery.js"
+	// key : "filepath", value : "js/jQuery.js"
 	params := make(map[string]string)
 	root, ok := r.roots[method]
 
@@ -50,12 +60,15 @@ func (r *router) getRoute(method string, path string) (*node, map[string]string)
 		return nil, nil
 	}
 
+	// 寻找到与url匹配的 *node
 	n := root.search(searchParts, 0)
 
 	if n != nil {
-		parts := parsePattern(n.pattern)
+		// parts却注册的url去掉'/'后的切片
+		parts := parseUrl(n.url)
 		for index, part := range parts {
 			if part[0] == ':' {
+
 				params[part[1:]] = searchParts[index]
 			}
 			if part[0] == '*' && len(part) > 1 {
@@ -72,8 +85,9 @@ func (r *router) getRoute(method string, path string) (*node, map[string]string)
 func (r *router) handle(c *Context) {
 	n, params := r.getRoute(c.Method, c.Path)
 	if n != nil {
+		// 对整个web没有影响，只是将匹配结果放入Context中，等待后续处理
 		c.Params = params
-		key := c.Method + "-" + n.pattern
+		key := c.Method + "-" + n.url
 		r.handlers[key](c)
 	} else {
 		c.String(404, "404 NOT FOUND: %s\n", c.Path)
