@@ -87,6 +87,7 @@ func (r *router) handle(c *Context) {
 	if n != nil {
 		// 对整个web没有影响，只是将匹配结果放入Context中，等待后续处理
 		c.Params = params
+		// n.url 是注册了的路由,可能存在模糊匹配
 		key := c.Method + "-" + n.url
 		r.handlers[key](c)
 	} else {

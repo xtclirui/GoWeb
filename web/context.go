@@ -13,7 +13,7 @@ type Context struct {
 	Req        *http.Request
 	Path       string
 	Method     string
-	Params     map[string]string
+	Params     map[string]string // params存放的是注册路由时，含有模糊匹配时，匹配的对应关系
 	StatusCode int
 }
 
