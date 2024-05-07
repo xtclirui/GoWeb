@@ -6,20 +6,24 @@ import (
 )
 
 func main() {
-	r := web.New()
-	r.GET("/", func(c *web.Context) {
-		c.HTML(http.StatusOK, "<h1>Hello Web</h1>")
+	w := web.New()
+	w.GET("/", func(c *web.Context) {
+		c.HTML(http.StatusOK, "<h1>Hello Gee</h1>")
 	})
-	r.GET("/hello", func(c *web.Context) {
+
+	w.GET("/hello", func(c *web.Context) {
 		// expect /hello?name=geektutu
 		c.String(http.StatusOK, "hello %s, you're at %s\n", c.Query("name"), c.Path)
 	})
 
-	r.POST("/login", func(c *web.Context) {
-		c.JSON(http.StatusOK, web.H{
-			"username": c.PostForm("username"),
-			"password": c.PostForm("password"),
-		})
+	w.GET("/hello/:name", func(c *web.Context) {
+		// expect /hello/geektutu
+		c.String(http.StatusOK, "hello %s, you're at %s\n", c.Param("name"), c.Path)
 	})
-	r.Run(":9999")
+
+	w.GET("/assets/*filepath", func(c *web.Context) {
+		c.JSON(http.StatusOK, web.H{"filepath": c.Param("filepath")})
+	})
+
+	w.Run(":9999")
 }

@@ -6,31 +6,31 @@ import (
 
 type HandlerFunc func(ctx *Context)
 
-type Engine struct {
+type Web struct {
 	router *router
 }
 
-func New() *Engine {
-	return &Engine{router: newRouter()}
+func New() *Web {
+	return &Web{router: newRouter()}
 }
 
-func (engine *Engine) addRoute(method string, url string, handler HandlerFunc) {
-	engine.router.addRouter(method, url, handler)
+func (web *Web) addRoute(method string, url string, handler HandlerFunc) {
+	web.router.addRouter(method, url, handler)
 }
 
-func (engine *Engine) GET(url string, handler HandlerFunc) {
-	engine.addRoute("GET", url, handler)
+func (web *Web) GET(url string, handler HandlerFunc) {
+	web.addRoute("GET", url, handler)
 }
 
-func (engine *Engine) POST(url string, handler HandlerFunc) {
-	engine.addRoute("POST", url, handler)
+func (web *Web) POST(url string, handler HandlerFunc) {
+	web.addRoute("POST", url, handler)
 }
 
-func (engine *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (web *Web) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	c := newContext(w, req)
-	engine.router.handle(c)
+	web.router.handle(c)
 }
 
-func (engine *Engine) Run(addr string) (err error) {
-	return http.ListenAndServe(addr, engine)
+func (web *Web) Run(addr string) (err error) {
+	return http.ListenAndServe(addr, web)
 }
