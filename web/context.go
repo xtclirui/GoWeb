@@ -15,6 +15,9 @@ type Context struct {
 	Method     string
 	Params     map[string]string // params存放的是注册路由时，含有模糊匹配时，匹配的对应关系
 	StatusCode int
+
+	mid   []HandlerFunc // 中间件
+	index int           // index是记录当前执行到第几个中间件
 }
 
 func newContext(w http.ResponseWriter, req *http.Request) *Context {
@@ -23,6 +26,7 @@ func newContext(w http.ResponseWriter, req *http.Request) *Context {
 		Req:    req,
 		Path:   req.URL.Path,
 		Method: req.Method,
+		index:  -1,
 	}
 }
 
@@ -81,4 +85,19 @@ func (c *Context) HTML(status int, html string) {
 func (c *Context) Param(key string) string {
 	value, _ := c.Params[key]
 	return value
+}
+
+// 调用中间件
+func (c *Context) Next() {
+	c.index++
+	s := len(c.mid)
+
+	for ; c.index < s; c.index++ {
+		c.mid[c.index](c)
+	}
+}
+
+func (c *Context) Fail(code int, err string) {
+	c.index = len(c.mid)
+	c.JSON(code, H{"message": err})
 }

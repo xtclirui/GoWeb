@@ -89,8 +89,13 @@ func (r *router) handle(c *Context) {
 		c.Params = params
 		// n.url 是注册了的路由,可能存在模糊匹配
 		key := c.Method + "-" + n.url
-		r.handlers[key](c)
+		c.mid = append(c.mid, r.handlers[key])
 	} else {
-		c.String(404, "404 NOT FOUND: %s\n", c.Path)
+		c.mid = append(c.mid, func(c *Context) {
+			c.String(404, "404 NOT FOUND: %s\n", c.Path)
+		})
 	}
+
+	// 执行中间件
+	c.Next()
 }
