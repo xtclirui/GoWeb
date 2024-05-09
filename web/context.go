@@ -18,6 +18,7 @@ type Context struct {
 
 	mid   []HandlerFunc // 中间件
 	index int           // index是记录当前执行到第几个中间件
+	web   *Web
 }
 
 func newContext(w http.ResponseWriter, req *http.Request) *Context {
@@ -76,10 +77,12 @@ func (c *Context) Data(status int, data []byte) {
 	c.Writer.Write(data)
 }
 
-func (c *Context) HTML(status int, html string) {
+func (c *Context) HTML(statu int, name string, data interface{}) {
 	c.SetHeader("Content-Type", "text/html")
-	c.Status(status)
-	c.Writer.Write([]byte(html))
+	c.Status(statu)
+	if err := c.web.htmlTemplate.ExecuteTemplate(c.Writer, name, data); err != nil {
+		c.Fail(500, err.Error())
+	}
 }
 
 func (c *Context) Param(key string) string {

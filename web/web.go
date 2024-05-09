@@ -1,8 +1,10 @@
 package web
 
 import (
+	"html/template"
 	"log"
 	"net/http"
+	"path"
 	"strings"
 )
 
@@ -24,7 +26,9 @@ type (
 	Web struct {
 		*RouterGroup // 字段没有变量名，默认使用类型作为字段名，模拟继承关系
 		router       *router
-		groups       []*RouterGroup // store all groups
+		groups       []*RouterGroup // store all groups，至少含有一个，web本身
+		htmlTemplate *template.Template
+		funcMap      template.FuncMap
 	}
 )
 
@@ -32,6 +36,7 @@ type (
 func New() *Web {
 	web := &Web{router: newRouter()}
 	web.RouterGroup = &RouterGroup{web: web}
+	// 初始化时，添加web实例的web.RouterGroup
 	web.groups = []*RouterGroup{web.RouterGroup}
 	return web
 }
@@ -76,13 +81,48 @@ func (web *Web) Run(addr string) (err error) {
 }
 
 func (web *Web) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	// 首先根据前缀初始化中间件
 	var middlewares []HandlerFunc
 	for _, group := range web.groups {
 		if strings.HasPrefix(req.URL.Path, group.prefix) {
 			middlewares = append(middlewares, group.middlewares...)
 		}
 	}
+	// 一个http连接对应一个Context
 	c := newContext(w, req)
 	c.mid = middlewares
+	c.web = web
 	web.router.handle(c)
+}
+
+// 创建静态处理函数
+func (group *RouterGroup) createStaticHandler(relativePath string, fs http.FileSystem) HandlerFunc {
+	absolutePath := path.Join(group.prefix, relativePath)
+	fileServer := http.StripPrefix(absolutePath, http.FileServer(fs))
+	return func(c *Context) {
+		file := c.Param("filepath")
+
+		if _, err := fs.Open(file); err != nil {
+			c.Status(http.StatusNotFound)
+			return
+		}
+		fileServer.ServeHTTP(c.Writer, c.Req)
+	}
+}
+
+// 服务器静态文件
+func (group *RouterGroup) Static(relativePath string, root string) {
+	// http.Dir(root) 返回实现了http.FileSystem接口的Open 方法
+	// http.Dir用于指定一个文件系统目录，以便在HTTP服务器中提供静态文件服务
+	handler := group.createStaticHandler(relativePath, http.Dir(root))
+	url := path.Join(relativePath, "/*filepath")
+	group.GET(url, handler)
+}
+
+func (web *Web) SetFuncMap(funcMap template.FuncMap) {
+	web.funcMap = funcMap
+}
+
+func (web *Web) LoadHTMLGlob(url string) {
+	web.htmlTemplate = template.Must(template.New("").Funcs(web.funcMap).ParseGlob(url))
 }
