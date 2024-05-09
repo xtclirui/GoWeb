@@ -28,7 +28,7 @@ type (
 		router       *router
 		groups       []*RouterGroup // store all groups，至少含有一个，web本身
 		htmlTemplate *template.Template
-		funcMap      template.FuncMap
+		funcMap      template.FuncMap // template.FuncMap 是一个 map[string]interface{} 类型
 	}
 )
 
@@ -95,9 +95,11 @@ func (web *Web) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	web.router.handle(c)
 }
 
-// 创建静态处理函数
+// 创建静态文件处理函数，接受相对路径和http.FileSystem接口类型
 func (group *RouterGroup) createStaticHandler(relativePath string, fs http.FileSystem) HandlerFunc {
 	absolutePath := path.Join(group.prefix, relativePath)
+	// http.StripPrefix() 函数返回一个 http.Handler 接口类型的值。
+	// 创建一个用于处理静态文件的 http.Handler
 	fileServer := http.StripPrefix(absolutePath, http.FileServer(fs))
 	return func(c *Context) {
 		file := c.Param("filepath")
@@ -106,14 +108,13 @@ func (group *RouterGroup) createStaticHandler(relativePath string, fs http.FileS
 			c.Status(http.StatusNotFound)
 			return
 		}
+		// 将经过 http.StripPrefix 处理过的静态文件服务请求转发给文件服务器进行处理，并将结果写入到响应中。
 		fileServer.ServeHTTP(c.Writer, c.Req)
 	}
 }
 
-// 服务器静态文件
+// Static 注册静态路由
 func (group *RouterGroup) Static(relativePath string, root string) {
-	// http.Dir(root) 返回实现了http.FileSystem接口的Open 方法
-	// http.Dir用于指定一个文件系统目录，以便在HTTP服务器中提供静态文件服务
 	handler := group.createStaticHandler(relativePath, http.Dir(root))
 	url := path.Join(relativePath, "/*filepath")
 	group.GET(url, handler)
@@ -124,5 +125,6 @@ func (web *Web) SetFuncMap(funcMap template.FuncMap) {
 }
 
 func (web *Web) LoadHTMLGlob(url string) {
+	// 这行代码的作用是创建一个新的模板对象，并将指定路径下的所有模板文件解析到该对象中，同时将自定义的模板函数添加到模板函数映射中，以便在模板中使用这些函数。
 	web.htmlTemplate = template.Must(template.New("").Funcs(web.funcMap).ParseGlob(url))
 }
