@@ -1,6 +1,7 @@
 package web
 
 import (
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -38,6 +39,12 @@ func New() *Web {
 	web.RouterGroup = &RouterGroup{web: web}
 	// 初始化时，添加web实例的web.RouterGroup
 	web.groups = []*RouterGroup{web.RouterGroup}
+	return web
+}
+
+func Default() *Web {
+	web := New()
+	web.AddMid(Logger(), Recovery())
 	return web
 }
 
@@ -96,6 +103,8 @@ func (web *Web) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 }
 
 // 创建静态文件处理函数，接受相对路径和http.FileSystem接口类型
+// relativePath: /assets
+// fs： ./static
 func (group *RouterGroup) createStaticHandler(relativePath string, fs http.FileSystem) HandlerFunc {
 	absolutePath := path.Join(group.prefix, relativePath)
 	// http.StripPrefix() 函数返回一个 http.Handler 接口类型的值。
@@ -110,13 +119,17 @@ func (group *RouterGroup) createStaticHandler(relativePath string, fs http.FileS
 		}
 		// 将经过 http.StripPrefix 处理过的静态文件服务请求转发给文件服务器进行处理，并将结果写入到响应中。
 		fileServer.ServeHTTP(c.Writer, c.Req)
+		//c.String(http.StatusOK, "hello %s, you're at %s\n", c.Query("name"), c.Path)
 	}
 }
 
-// Static 注册静态路由
+// Static 注册静态路由 "/assets", "./static"
 func (group *RouterGroup) Static(relativePath string, root string) {
 	handler := group.createStaticHandler(relativePath, http.Dir(root))
+	// url = "/assets/*filepath"
 	url := path.Join(relativePath, "/*filepath")
+	fmt.Println(url)
+	// 注册路由
 	group.GET(url, handler)
 }
 
@@ -125,6 +138,9 @@ func (web *Web) SetFuncMap(funcMap template.FuncMap) {
 }
 
 func (web *Web) LoadHTMLGlob(url string) {
-	// 这行代码的作用是创建一个新的模板对象，并将指定路径下的所有模板文件解析到该对象中，同时将自定义的模板函数添加到模板函数映射中，以便在模板中使用这些函数。
+	// .Funcs(web.funcMap): 用于将一个自定义的函数映射（web.funcMap）添加到模板对象中
+	// .ParseGlob(url): 用于解析指定路径下的所有模板文件。
+	// url 参数是一个包含文件路径的通配符，比如 *.html，表示匹配当前目录下所有的 .html 文件。
+	// 创建一个新的模板对象，将自定义的模板函数添加到模板对象中，并解析指定路径下的所有模板文件，以便后续在程序中使用这些模板来生成最终的HTML输出
 	web.htmlTemplate = template.Must(template.New("").Funcs(web.funcMap).ParseGlob(url))
 }

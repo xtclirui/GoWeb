@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"html/template"
 	"net/http"
 	"time"
 	"web"
@@ -19,33 +18,15 @@ func FormatAsDate(t time.Time) string {
 }
 
 func main() {
-	r := web.New()
-	r.AddMid(web.Logger())
-	r.SetFuncMap(template.FuncMap{
-		"FormatAsDate": FormatAsDate,
-	})
-	r.LoadHTMLGlob("templates/*")
-	// 注册静态文件路由
-	r.Static("/assets", "./static")
-
-	stu1 := &student{Name: "Wuxinyi", Age: 20}
-	stu2 := &student{Name: "Lirui", Age: 22}
+	r := web.Default()
 	r.GET("/", func(c *web.Context) {
-		c.HTML(http.StatusOK, "css.tmpl", nil)
+		c.String(http.StatusOK, "Hello Geektutu\n")
 	})
-	r.GET("/students", func(c *web.Context) {
-		c.HTML(http.StatusOK, "arr.tmpl", web.H{
-			"title":  "Web",
-			"stuArr": [2]*student{stu1, stu2},
-		})
+	// index out of range for testing Recovery()
+	r.GET("/panic", func(c *web.Context) {
+		// 抛出越界异常
+		names := []string{"geektutu"}
+		c.String(http.StatusOK, names[100])
 	})
-
-	r.GET("/date", func(c *web.Context) {
-		c.HTML(http.StatusOK, "custom_func.tmpl", web.H{
-			"title": "gee",
-			"now":   time.Date(2019, 8, 17, 0, 0, 0, 0, time.UTC),
-		})
-	})
-
 	r.Run(":9999")
 }

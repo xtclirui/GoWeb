@@ -64,7 +64,7 @@ func (r *router) getRoute(method string, url string) (*node, map[string]string) 
 	n := root.search(searchParts, 0)
 
 	if n != nil {
-		// parts却注册的url去掉'/'后的切片
+		// parts是注册的url去掉'/'后的切片
 		parts := parseUrl(n.url)
 		for index, part := range parts {
 			if part[0] == ':' {

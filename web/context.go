@@ -13,7 +13,7 @@ type Context struct {
 	Req        *http.Request
 	Path       string
 	Method     string
-	Params     map[string]string // params存放的是注册路由时，含有模糊匹配时，匹配的对应关系
+	Params     map[string]string // params存放注册路由含有的模糊匹配的对应关系，func (r *router) handle(c *Context)中初始化
 	StatusCode int
 
 	mid   []HandlerFunc // 中间件
@@ -80,6 +80,7 @@ func (c *Context) Data(status int, data []byte) {
 func (c *Context) HTML(statu int, name string, data interface{}) {
 	c.SetHeader("Content-Type", "text/html")
 	c.Status(statu)
+	// 根据模板文件名选择模板进行渲染
 	if err := c.web.htmlTemplate.ExecuteTemplate(c.Writer, name, data); err != nil {
 		c.Fail(500, err.Error())
 	}
